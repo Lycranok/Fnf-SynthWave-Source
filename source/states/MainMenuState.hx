@@ -19,22 +19,24 @@ class MainMenuState extends MusicBeatState
 	public static var psychEngineVersion:String = '0.7.1h'; //This is also used for Discord RPC
 	public static var curSelected:Int = 0;
 
-	var menuItems:FlxTypedGroup<FlxSprite>;
 	private var camGame:FlxCamera;
-	private var camAchievement:FlxCamera;
-	
-	var optionShit:Array<String> = [
-		'story_mode',
-		'freeplay',
-		#if MODS_ALLOWED 'mods', #end
-		#if ACHIEVEMENTS_ALLOWED 'awards', #end
-		'credits',
-		#if !switch 'donate', #end
-		'options'
+
+	var buttons:FlxTypedGroup<FlxSprite> = new FlxTypedGroup<FlxSprite>();
+	var buttonFG:FlxTypedGroup<FlxSprite> = new FlxTypedGroup<FlxSprite>();
+	var specialLogo:FlxTypedGroup<FlxSprite> = new FlxTypedGroup<FlxSprite>();
+
+	var arrow:FlxSprite;
+
+	var optionsList:Array<String> = [
+		'Story',
+		'Freeplay',
+		'Options',
+		'Discord',
+		'Extras'
 	];
 
-	var magenta:FlxSprite;
-	var camFollow:FlxObject;
+	var mapScale:Array<Array<Float>> = [];
+	var logoScale:Array<Array<Float>> = [];
 
 	override function create()
 	{
@@ -49,11 +51,8 @@ class MainMenuState extends MusicBeatState
 		#end
 
 		camGame = new FlxCamera();
-		camAchievement = new FlxCamera();
-		camAchievement.bgColor.alpha = 0;
 
 		FlxG.cameras.reset(camGame);
-		FlxG.cameras.add(camAchievement, false);
 		FlxG.cameras.setDefaultDrawTarget(camGame, true);
 
 		transIn = FlxTransitionableState.defaultTransIn;
@@ -61,98 +60,113 @@ class MainMenuState extends MusicBeatState
 
 		persistentUpdate = persistentDraw = true;
 
-		var yScroll:Float = Math.max(0.25 - (0.05 * (optionShit.length - 4)), 0.1);
-		var bg:FlxSprite = new FlxSprite(-80).loadGraphic(Paths.image('menuBG'));
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.scrollFactor.set(0, yScroll);
-		bg.setGraphicSize(Std.int(bg.width * 1.175));
-		bg.updateHitbox();
-		bg.screenCenter();
-		add(bg);
+		var blackBG:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Black BG'));
+		blackBG.setGraphicSize(FlxG.width, FlxG.height);
+		add(blackBG);
 
-		camFollow = new FlxObject(0, 0, 1, 1);
-		add(camFollow);
-
-		magenta = new FlxSprite(-80).loadGraphic(Paths.image('menuDesat'));
-		magenta.antialiasing = ClientPrefs.data.antialiasing;
-		magenta.scrollFactor.set(0, yScroll);
-		magenta.setGraphicSize(Std.int(magenta.width * 1.175));
-		magenta.updateHitbox();
-		magenta.screenCenter();
-		magenta.visible = false;
-		magenta.color = 0xFFfd719b;
-		add(magenta);
-		
-		// magenta.scrollFactor.set();
-
-		menuItems = new FlxTypedGroup<FlxSprite>();
-		add(menuItems);
-
-		var scale:Float = 1;
-		/*if(optionShit.length > 6) {
-			scale = 6 / optionShit.length;
-		}*/
-
-		for (i in 0...optionShit.length)
+		for(i in 0...2)
 		{
-			var offset:Float = 108 - (Math.max(optionShit.length, 4) - 4) * 80;
-			var menuItem:FlxSprite = new FlxSprite(0, (i * 140)  + offset);
-			menuItem.antialiasing = ClientPrefs.data.antialiasing;
-			menuItem.scale.x = scale;
-			menuItem.scale.y = scale;
-			menuItem.frames = Paths.getSparrowAtlas('mainmenu/menu_' + optionShit[i]);
-			menuItem.animation.addByPrefix('idle', optionShit[i] + " basic", 24);
-			menuItem.animation.addByPrefix('selected', optionShit[i] + " white", 24);
-			menuItem.animation.play('idle');
-			menuItem.ID = i;
-			menuItem.screenCenter(X);
-			menuItems.add(menuItem);
-			var scr:Float = (optionShit.length - 4) * 0.135;
-			if(optionShit.length < 6) scr = 0;
-			menuItem.scrollFactor.set(0, scr);
-			//menuItem.setGraphicSize(Std.int(menuItem.width * 0.58));
-			menuItem.updateHitbox();
+			var fileList:Array<String> = ['Top Glow', 'Bot Glow'];
+		
+			var rgb:FlxSprite = new FlxSprite(i == 0? -125 : -80, i == 0? 45 : -40).loadGraphic(Paths.image('MainMenu/' + fileList[i]));
+			rgb.antialiasing = true;
+			add(rgb);
+		} 
+
+		// FlxG.camera.zoom = 0.5;
+
+		var uiArt:FlxSprite = new FlxSprite(-70, -600).loadGraphic(Paths.image('MainMenu/Arts/1'));
+		uiArt.scale.set(0.34, 0.34);
+		add(uiArt);
+
+		var outline:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Outline'));
+		outline.setGraphicSize(FlxG.width, FlxG.height);
+		add(outline);
+
+		var topBlack:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, 10, 0xff000000);
+		add(topBlack);
+
+		var logoBox:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Synth Box'));
+		logoBox.setGraphicSize(FlxG.width, FlxG.height);
+		add(logoBox);
+
+		var logo:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Synth Text'));
+		logo.setGraphicSize(FlxG.width, FlxG.height);
+		add(logo);
+
+		var blueBG:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Blue bg', 'preload'));
+		blueBG.setGraphicSize(FlxG.width, FlxG.height);
+		add(blueBG);
+
+		var blueBGGlow:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Blue glow'));
+		blueBGGlow.setGraphicSize(FlxG.width, FlxG.height);
+		add(blueBGGlow);
+
+		var blueBGlines:FlxSprite = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Lines'));
+		blueBGlines.setGraphicSize(FlxG.width, FlxG.height);
+		add(blueBGlines);
+
+		add(buttons);
+		add(buttonFG);
+		add(specialLogo);
+
+		for(i in 0...optionsList.length)
+		{
+			var buttonBG:FlxSprite = new FlxSprite(0 - (i * 170), -20 + (i * 135)).loadGraphic(Paths.image('MainMenu/Box'));
+			buttonBG.scale.x -= i * 0.2;
+			buttonBG.scale.y -= i * 0.2;
+			buttonBG.ID = i;
+			buttons.add(buttonBG);
+
+			var buttonShit:FlxSprite = new FlxSprite(190 - (i * 105), 190 + (i * 165)).loadGraphic(Paths.image(optionsList[i] == 'Discord'? 'MainMenu/Options/Discord text' : optionsList[i] == 'Extras'? 'MainMenu/Options/Extra' : 'MainMenu/Options/' + optionsList[i]));
+			buttonShit.ID = i;
+			switch(buttonShit.ID)
+			{
+				case 0, 2:
+					buttonShit.scale.set(1, 1);
+				case 1:
+					buttonShit.scale.set(0.95, 0.95);
+				case 3:
+					buttonShit.scale.set(0.7, 0.7);
+					buttonShit.offset.set(-25);
+				case 4:
+					buttonShit.scale.set(0.95, 0.95);
+					buttonShit.offset.set(0, 5);
+			}
+
+			if(optionsList[i] == 'Discord')
+			{
+				var discord:FlxSprite = new FlxSprite(190 - (i * 105), 190 + (i * 165)).loadGraphic(Paths.image('MainMenu/Options/Discord Logo'));
+				discord.ID = i;
+				discord.scale.set(0.17, 0.17);
+				discord.offset.set(-120, 650);
+				specialLogo.add(discord);
+
+				logoScale.push([discord.scale.x, discord.scale.y]);
+			}
+			buttonFG.add(buttonShit);
+
+			//dumb push to use for math later on lmao
+			mapScale.push([buttonShit.scale.x, buttonShit.scale.y]);
 		}
 
-		FlxG.camera.follow(camFollow, null, 0);
+		arrow = new FlxSprite(-80, -40).loadGraphic(Paths.image('MainMenu/Arrow'));
+		arrow.setGraphicSize(FlxG.width, FlxG.height);
+		add(arrow);
 
-		var versionShit:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine v" + psychEngineVersion, 12);
-		versionShit.scrollFactor.set();
-		versionShit.setFormat("VCR OSD Mono", 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		add(versionShit);
-		var versionShit:FlxText = new FlxText(12, FlxG.height - 24, 0, "Friday Night Funkin' v" + Application.current.meta.get('version'), 12);
-		versionShit.scrollFactor.set();
-		versionShit.setFormat("VCR OSD Mono", 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		add(versionShit);
+		arrow.antialiasing = blueBGlines.antialiasing = blueBGGlow.antialiasing = blueBG.antialiasing = logo.antialiasing = logoBox.antialiasing = topBlack.antialiasing = outline.antialiasing = uiArt.antialiasing = blackBG.antialiasing = ClientPrefs.data.antialiasing;
 
-		// NG.core.calls.event.logEvent('swag').send();
+		for(members in buttons)
+			members.antialiasing = ClientPrefs.data.antialiasing;
+		for(members in buttonFG)
+			members.antialiasing = ClientPrefs.data.antialiasing;
+		for(members in specialLogo)
+			members.antialiasing = ClientPrefs.data.antialiasing;
 
 		changeItem();
 
-		#if ACHIEVEMENTS_ALLOWED
-		Achievements.loadAchievements();
-		var leDate = Date.now();
-		if (leDate.getDay() == 5 && leDate.getHours() >= 18) {
-			var achieveID:Int = Achievements.getAchievementIndex('friday_night_play');
-			if(!Achievements.isAchievementUnlocked(Achievements.achievementsStuff[achieveID][2])) { //It's a friday night. WEEEEEEEEEEEEEEEEEE
-				Achievements.achievementsMap.set(Achievements.achievementsStuff[achieveID][2], true);
-				giveAchievement();
-				ClientPrefs.saveSettings();
-			}
-		}
-		#end
-
 		super.create();
 	}
-
-	#if ACHIEVEMENTS_ALLOWED
-	// Unlocks "Freaky on a Friday Night" achievement
-	function giveAchievement() {
-		add(new AchievementPopup('friday_night_play', camAchievement));
-		FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
-		trace('Giving achievement "friday_night_play"');
-	}
-	#end
 
 	var selectedSomethin:Bool = false;
 
@@ -161,131 +175,117 @@ class MainMenuState extends MusicBeatState
 		if (FlxG.sound.music.volume < 0.8)
 		{
 			FlxG.sound.music.volume += 0.5 * elapsed;
-			if(FreeplayState.vocals != null) FreeplayState.vocals.volume += 0.5 * elapsed;
+			// if(FreeplayState.vocals != null) FreeplayState.vocals.volume += 0.5 * elapsed;
 		}
-		FlxG.camera.followLerp = FlxMath.bound(elapsed * 9 / (FlxG.updateFramerate / 60), 0, 1);
 
 		if (!selectedSomethin)
 		{
-			if (controls.UI_UP_P)
-			{
-				FlxG.sound.play(Paths.sound('scrollMenu'));
-				changeItem(-1);
-			}
-
-			if (controls.UI_DOWN_P)
-			{
-				FlxG.sound.play(Paths.sound('scrollMenu'));
-				changeItem(1);
-			}
-
-			if (controls.BACK)
-			{
-				selectedSomethin = true;
-				FlxG.sound.play(Paths.sound('cancelMenu'));
+			if(controls.UI_UP_P || controls.UI_DOWN_P)
+				changeItem(controls.UI_UP_P? curSelected == 0? 0: -1 : curSelected == optionsList.length - 1? 0 : 1);
+			if(controls.BACK)
 				MusicBeatState.switchState(new TitleState());
-			}
-
-			if (controls.ACCEPT)
+			if(controls.ACCEPT)
 			{
-				if (optionShit[curSelected] == 'donate')
+				var daChoice:String = optionsList[curSelected].toLowerCase();
+
+				if(daChoice == 'discord')
 				{
-					CoolUtil.browserLoad('https://ninja-muffin24.itch.io/funkin');
+					CoolUtil.browserLoad("https://discord.gg/rE9nWqHP");
 				}
 				else
 				{
 					selectedSomethin = true;
-					FlxG.sound.play(Paths.sound('confirmMenu'));
 
-					if(ClientPrefs.data.flashing) FlxFlicker.flicker(magenta, 1.1, 0.15, false);
-
-					menuItems.forEach(function(spr:FlxSprite)
+					switch(daChoice)
 					{
-						if (curSelected != spr.ID)
-						{
-							FlxTween.tween(spr, {alpha: 0}, 0.4, {
-								ease: FlxEase.quadOut,
-								onComplete: function(twn:FlxTween)
-								{
-									spr.kill();
-								}
-							});
-						}
-						else
-						{
-							FlxFlicker.flicker(spr, 1, 0.06, false, false, function(flick:FlxFlicker)
-							{
-								var daChoice:String = optionShit[curSelected];
-
-								switch (daChoice)
-								{
-									case 'story_mode':
-										MusicBeatState.switchState(new StoryMenuState());
-									case 'freeplay':
-										MusicBeatState.switchState(new FreeplayState());
-									#if MODS_ALLOWED
-									case 'mods':
-										MusicBeatState.switchState(new ModsMenuState());
-									#end
-									case 'awards':
-										MusicBeatState.switchState(new AchievementsMenuState());
-									case 'credits':
-										MusicBeatState.switchState(new CreditsState());
-									case 'options':
-										LoadingState.loadAndSwitchState(new OptionsState());
-										OptionsState.onPlayState = false;
-										if (PlayState.SONG != null)
-										{
-											PlayState.SONG.arrowSkin = null;
-											PlayState.SONG.splashSkin = null;
-										}
-								}
-							});
-						}
-					});
+						case 'story':
+							MusicBeatState.switchState(new StoryMenuState());
+						case 'freeplay':
+							MusicBeatState.switchState(new FreeplayState());
+						case 'options':
+							LoadingState.loadAndSwitchState(new OptionsState());
+						case 'extras':
+							MusicBeatState.resetState();
+					}
 				}
 			}
+
 			#if desktop
-			else if (controls.justPressed('debug_1'))
+			if (controls.justPressed('debug_1'))
 			{
 				selectedSomethin = true;
 				MusicBeatState.switchState(new MasterEditorMenu());
 			}
 			#end
+
 		}
 
-		super.update(elapsed);
+		arrow.visible = curSelected == optionsList.length - 1? false : true;
 
-		menuItems.forEach(function(spr:FlxSprite)
-		{
-			spr.screenCenter(X);
-		});
+		super.update(elapsed);
 	}
 
 	function changeItem(huh:Int = 0)
 	{
 		curSelected += huh;
 
-		if (curSelected >= menuItems.length)
-			curSelected = 0;
-		if (curSelected < 0)
-			curSelected = menuItems.length - 1;
-
-		menuItems.forEach(function(spr:FlxSprite)
+		buttons.forEach(function(spr:FlxSprite)
 		{
-			spr.animation.play('idle');
-			spr.updateHitbox();
-
-			if (spr.ID == curSelected)
+			var value:Int = 0;
+			
+			switch(curSelected)
 			{
-				spr.animation.play('selected');
-				var add:Float = 0;
-				if(menuItems.length > 4) {
-					add = menuItems.length * 8;
-				}
-				camFollow.setPosition(spr.getGraphicMidpoint().x, spr.getGraphicMidpoint().y - add);
-				spr.centerOffsets();
+				case 0:
+					if(spr.ID >= curSelected && spr.ID < curSelected + 3)
+						value = 1;
+					else value = 0;
+				default:
+					if(spr.ID >= curSelected && spr.ID <= curSelected + 2)
+						value = 1;
+					else 
+						value = 0;
 			}
+			FlxTween.tween(spr, {y: -20 -(curSelected - spr.ID) * 135, x: (curSelected - spr.ID) * 170, alpha: value, "scale.y": ((curSelected - spr.ID) + 5) * 0.2, "scale.x": ((curSelected - spr.ID) + 5) * 0.2}, 0.1);
+		});
+
+		buttonFG.forEach(function(spr:FlxSprite)
+		{
+			var value:Int = 0;
+			
+			switch(curSelected)
+			{
+				case 0:
+					if(spr.ID >= curSelected && spr.ID < curSelected + 3)
+						value = 1;
+					else value = 0;
+				default:
+					if(spr.ID >= curSelected && spr.ID <= curSelected + 2)
+						value = 1;
+					else 
+						value = 0;
+			}
+
+			FlxTween.tween(spr, {y: 190 -(curSelected - spr.ID) * 165, x: 190 + (curSelected - spr.ID) * 105, alpha: value, "scale.y": ((curSelected - spr.ID) + 5) * (0.2 * mapScale[spr.ID][1]), "scale.x": ((curSelected - spr.ID) + 5) * (0.2 * mapScale[spr.ID][0])}, 0.1);
+		});
+
+		specialLogo.forEach(function(spr:FlxSprite)
+		{
+			var value:Int = 0;
+			
+			switch(curSelected)
+			{
+				case 0:
+					if(spr.ID >= curSelected && spr.ID < curSelected + 3)
+						value = 1;
+					else value = 0;
+				default:
+					if(spr.ID >= curSelected && spr.ID <= curSelected + 2)
+						value = 1;
+					else 
+						value = 0;
+			}
+
+			FlxTween.tween(spr, {y: 685 -(curSelected - spr.ID) * 165, x: -120 + (curSelected - spr.ID) * 105, alpha: value, "scale.y": ((curSelected - spr.ID) + 5) * (0.2 * logoScale[0][1]), "scale.x": ((curSelected - spr.ID) + 5) * (0.2 * logoScale[0][0]), "offset.y": 650 -(curSelected - spr.ID) * -3, "offset.x": -120 -(curSelected - spr.ID) * -35}, 0.1);
 		});
 	}
 }

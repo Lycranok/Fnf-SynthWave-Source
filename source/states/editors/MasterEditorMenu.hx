@@ -124,9 +124,6 @@ class MasterEditorMenu extends MusicBeatState
 					LoadingState.loadAndSwitchState(new NoteSplashDebugState());
 			}
 			FlxG.sound.music.volume = 0;
-			#if PRELOAD_ALL
-			FreeplayState.destroyFreeplayVocals();
-			#end
 		}
 		
 		var bullShit:Int = 0;
