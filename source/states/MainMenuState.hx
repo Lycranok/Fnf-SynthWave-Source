@@ -32,7 +32,8 @@ class MainMenuState extends MusicBeatState
 		'Freeplay',
 		'Options',
 		'Discord',
-		'Extras'
+		'Extras',
+		'Credits'
 	];
 
 	var mapScale:Array<Array<Float>> = [];
@@ -190,7 +191,7 @@ class MainMenuState extends MusicBeatState
 
 				if(daChoice == 'discord')
 				{
-					CoolUtil.browserLoad("https://discord.gg/rE9nWqHP");
+					CoolUtil.browserLoad("https://discord.gg/tZYYrJjCEV");
 				}
 				else
 				{
@@ -206,6 +207,8 @@ class MainMenuState extends MusicBeatState
 							LoadingState.loadAndSwitchState(new OptionsState());
 						case 'extras':
 							MusicBeatState.resetState();
+						case 'credits':
+							MusicBeatState.switchState(new CreditsState());
 					}
 				}
 			}
